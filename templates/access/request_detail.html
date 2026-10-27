@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Request{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ req.entitlement.name }} <span class="badge {{ req.status|badge }}">{{ req.get_status_display }}</span></h1>
+  <div class="sub">Requested by <a href="{% url 'user_detail' req.requester_id %}">{{ req.requester.display_name }}</a> on {{ req.created_at|date:"d M Y, H:i" }}</div></div>
+  {% if can_cancel %}<form method="post" action="{% url 'request_cancel' req.pk %}">{% csrf_token %}<button class="btn danger" type="submit">Cancel request</button></form>{% endif %}</div>
+<div class="grid g-main">
+  <div>
+    <div class="card"><h2>Why it is needed</h2><p style="margin:0;white-space:pre-line">{{ req.justification }}</p>
+      {% if req.duration_days %}<p class="small muted">Requested for {{ req.duration_days }} days.</p>{% endif %}</div>
+    {% if step_to_decide %}<div class="card"><h2>Your decision</h2>
+      <form method="post" action="{% url 'request_decide' step_to_decide.pk %}">{% csrf_token %}
+        {% include "_fields.html" with form=form %}
+        <button class="btn primary" name="decision" value="approve" type="submit">Approve</button>
+        <button class="btn danger" name="decision" value="reject" type="submit">Reject</button></form></div>{% endif %}
+  </div>
+  <div class="card"><h2>Approval path</h2>
+    {% if not steps %}<p class="muted small">No approval needed: granted automatically.</p>{% endif %}
+    <ul class="timeline">{% for s in steps %}<li><strong>{{ s.get_kind_display }}</strong> <span class="badge {{ s.status|badge }}">{{ s.status }}</span>
+      <div class="small muted">{% if s.decided_by %}{{ s.decided_by.display_name }} · {{ s.decided_at|date:"d M H:i" }}{% elif s.approver %}waiting for {{ s.approver.display_name }}{% else %}any IAM administrator{% endif %}</div>
+      {% if s.comment %}<div class="small">“{{ s.comment }}”</div>{% endif %}</li>{% endfor %}</ul></div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Access catalog{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Access catalog</h1><div class="sub">Everything that can be granted, who approves it, and who gets it automatically.</div></div>
+  {% if admin %}<div class="actions"><a class="btn primary" href="{% url 'entitlement_new' %}">+ New entitlement</a></div>{% endif %}</div>
+<div class="card"><div class="table-wrap"><table><thead><tr><th>Access</th><th>Risk</th><th>Approval</th><th>Automatic for</th><th></th></tr></thead><tbody>
+{% for e in entitlements %}<tr>
+  <td><strong>{{ e.name }}</strong>{% if not e.is_active %} <span class="badge muted">retired</span>{% endif %}<div class="small muted">{{ e.description }}</div></td>
+  <td><span class="badge {{ e.risk|badge }}">{{ e.get_risk_display }}</span></td>
+  <td class="small">{{ e.get_approval_policy_display }}{% if e.max_days %}<div class="muted">up to {{ e.max_days }} days</div>{% endif %}</td>
+  <td class="small">{% for d in e.departments.all %}{{ d.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% for r in e.job_roles.all %}{% if forloop.first and e.departments.all %}, {% endif %}{{ r.title }}{% if not forloop.last %}, {% endif %}{% endfor %}
+    {% if not e.departments.all and not e.job_roles.all %}<span class="muted">request only</span>{% endif %}</td>
+  <td class="right nowrap">
+    {% if e.pk in held %}<span class="badge ok">You have this</span>
+    {% elif e.pk in pending %}<span class="badge warn">Requested</span>
+    {% elif e.is_active %}<a class="btn sm primary" href="{% url 'my_access' %}?entitlement={{ e.pk }}">Request</a>{% endif %}
+    {% if admin %}<a class="btn sm" href="{% url 'entitlement_edit' e.pk %}">Edit</a>{% endif %}</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

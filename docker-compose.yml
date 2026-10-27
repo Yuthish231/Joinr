@@ -1,0 +1,72 @@
+# Local stack: web + scheduler + PostgreSQL + OpenLDAP.
+#   docker compose up --build -d
+#   open http://localhost:8000     (sign-in details: docker compose exec web cat .dev-credentials.txt)
+# The secrets below are throw-away development values. Change them for anything shared.
+
+x-app: &app
+  build: .
+  environment: &env
+    DEBUG: "false"
+    SECRET_KEY: dev-only-change-me-before-sharing
+    ALLOWED_HOSTS: localhost,127.0.0.1,web
+    CSRF_TRUSTED_ORIGINS: http://localhost:8000
+    COOKIE_SECURE: "false"            # plain http on localhost; set true behind TLS
+    DATABASE_URL: postgres://joinr:joinr-dev-pass@db:5432/joinr
+    LDAP_ENABLED: "true"
+    LDAP_SERVER_URI: ldap://ldap:389
+    LDAP_BIND_DN: cn=admin,dc=joinr,dc=local
+    LDAP_BIND_PASSWORD: ldap-dev-pass
+    LDAP_BASE_DN: dc=joinr,dc=local
+  depends_on:
+    db: {condition: service_healthy}
+    ldap: {condition: service_healthy}
+
+services:
+  web:
+    <<: *app
+    ports: ["8000:8000"]
+    environment:
+      <<: *env
+      SEED_DEMO: "1"                  # loads the demo organisation on first start; set 0 to skip
+  scheduler:
+    <<: *app
+    command: python manage.py run_scheduler
+    healthcheck: {disable: true}          # serves no HTTP; the image's web check does not apply
+    environment:
+      <<: *env
+      RUN_MIGRATIONS: "0"
+    depends_on:
+      web: {condition: service_healthy}
+      db: {condition: service_healthy}
+      ldap: {condition: service_healthy}
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: joinr
+      POSTGRES_USER: joinr
+      POSTGRES_PASSWORD: joinr-dev-pass
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U joinr -d joinr"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  ldap:
+    image: osixia/openldap:1.5.0
+    command: --copy-service
+    environment:
+      LDAP_ORGANISATION: Joinr
+      LDAP_DOMAIN: joinr.local
+      LDAP_ADMIN_PASSWORD: ldap-dev-pass
+      LDAP_TLS: "false"
+    volumes: [ldapdata:/var/lib/ldap, ldapconf:/etc/ldap/slapd.d]
+    healthcheck:
+      test: ["CMD-SHELL", "ldapsearch -x -H ldap://localhost -b dc=joinr,dc=local -D cn=admin,dc=joinr,dc=local -w ldap-dev-pass -s base dn"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  pgdata:
+  ldapdata:
+  ldapconf:

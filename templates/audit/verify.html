@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Audit verification{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Audit integrity check</h1></div></div>
+<div class="card form-narrow">
+  {% if ok %}<p><span class="badge ok">Intact</span></p><p>All {{ total }} events verified: each one is chained to the one before it and unchanged since it was written.</p>
+  {% else %}<p><span class="badge bad">Tampering detected</span></p><p>The chain breaks at event <strong>#{{ bad }}</strong>. That record, or one before it, was altered or removed.</p>{% endif %}
+  <a class="btn" href="{% url 'audit_list' %}">Back to the log</a></div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% load static ui %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ APP_NAME }}{% endblock %} · {{ APP_NAME }}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><span class="logo">J</span> {{ APP_NAME }}</div>
+    {% with url=request.resolver_match.url_name %}
+    <nav class="nav">
+      <a href="{% url 'dashboard' %}" class="{% if url == 'dashboard' %}on{% endif %}">Dashboard</a>
+
+      <div class="nav-group">My access</div>
+      <a href="{% url 'my_access' %}" class="{% if url == 'my_access' or url == 'request_detail' %}on{% endif %}">My access &amp; requests</a>
+      <a href="{% url 'catalog' %}" class="{% if url == 'catalog' %}on{% endif %}">Access catalog</a>
+      <a href="{% url 'approvals' %}" class="{% if url == 'approvals' %}on{% endif %}">Approvals
+        {% if nav_approvals %}<span class="count">{{ nav_approvals }}</span>{% endif %}</a>
+      {% if nav_manager %}<a href="{% url 'team' %}" class="{% if url == 'team' %}on{% endif %}">My team</a>{% endif %}
+
+      {% if nav_auditor %}
+      <div class="nav-group">Identity</div>
+      <a href="{% url 'user_list' %}" class="{% if url == 'user_list' or url == 'user_detail' or url == 'user_create' %}on{% endif %}">People</a>
+      <a href="{% url 'lifecycle_events' %}" class="{% if url == 'lifecycle_events' %}on{% endif %}">Joiners · Movers · Leavers</a>
+      {% if nav_admin %}
+      <a href="{% url 'requests_all' %}" class="{% if url == 'requests_all' %}on{% endif %}">All requests</a>
+      <a href="{% url 'grants_review' %}" class="{% if url == 'grants_review' %}on{% endif %}">Access to review</a>
+      <a href="{% url 'org' %}" class="{% if url == 'org' or url == 'org_edit' %}on{% endif %}">Departments &amp; roles</a>
+      {% endif %}
+
+      <div class="nav-group">Security</div>
+      {% if nav_admin %}<a href="{% url 'sessions_all' %}" class="{% if url == 'sessions_all' %}on{% endif %}">Active sessions</a>{% endif %}
+      <a href="{% url 'audit_list' %}" class="{% if url == 'audit_list' %}on{% endif %}">Audit log</a>
+      {% if nav_admin %}<a href="{% url 'directory_status' %}" class="{% if url == 'directory_status' %}on{% endif %}">Directory (LDAP)</a>{% endif %}
+      {% endif %}
+    </nav>
+    {% endwith %}
+    <div class="me">
+      <div class="person"><span class="avatar">{{ request.user|initials }}</span>
+        <div><div class="who">{{ request.user.display_name }}</div><div class="small">{{ request.user.job_role|default:request.user.username }}</div></div></div>
+      <div style="margin-top:.7rem"><a class="small" style="color:var(--side-ink)" href="{% url 'my_account' %}">Account &amp; sessions</a> ·
+        <a class="small" style="color:var(--side-ink)" href="{% url 'password_change' %}">Password</a></div>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn side" type="submit">Sign out</button></form>
+    </div>
+  </aside>
+
+  <main class="main">
+    {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

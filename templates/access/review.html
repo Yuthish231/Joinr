@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Access to review{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Access to re-confirm</h1>
+  <div class="sub">Kept when someone changed role. Confirm it is still needed, or remove it.</div></div></div>
+<div class="card"><table><thead><tr><th>Person</th><th>Access</th><th>Source</th><th></th></tr></thead><tbody>
+{% for g in grants %}<tr><td><a href="{% url 'user_detail' g.user_id %}">{{ g.user.display_name }}</a><div class="small muted">{{ g.user.job_role|default:"" }}</div></td>
+  <td>{{ g.entitlement.name }} <span class="badge {{ g.entitlement.risk|badge }}">{{ g.entitlement.get_risk_display }}</span></td>
+  <td class="small">{{ g.get_source_display }}</td>
+  <td class="right nowrap"><form class="inline" method="post" action="{% url 'grant_confirm' g.pk %}">{% csrf_token %}<button class="btn sm" type="submit">Still needed</button></form>
+    <form class="inline" method="post" action="{% url 'grant_revoke' g.pk %}">{% csrf_token %}<button class="btn sm danger" type="submit">Remove</button></form></td></tr>
+{% empty %}<tr><td colspan="4" class="empty">Nothing needs review.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

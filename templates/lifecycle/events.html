@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Joiners, movers, leavers{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Joiners · Movers · Leavers</h1><div class="sub">Every change in the identity lifecycle, newest first.</div></div></div>
+<form class="filters" method="get"><select name="kind" onchange="this.form.submit()"><option value="">All changes</option>
+  {% for v, l in kinds %}<option value="{{ v }}" {% if v == kind %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></form>
+<div class="card"><div class="table-wrap"><table><thead><tr><th>When</th><th>Change</th><th>Person</th><th>Detail</th><th>By</th></tr></thead><tbody>
+{% for e in page %}<tr><td class="nowrap small">{{ e.ts|date:"d M Y, H:i" }}</td>
+  <td><span class="badge {{ e.kind|badge }}">{{ e.get_kind_display }}</span></td>
+  <td><a href="{% url 'user_detail' e.user_id %}">{{ e.user.display_name }}</a></td>
+  <td class="small">{{ e.summary }}</td><td class="small muted">{{ e.actor.username|default:"system" }}</td></tr>
+{% empty %}<tr><td colspan="5" class="empty">Nothing yet.</td></tr>{% endfor %}</tbody></table></div>
+{% include "_pager.html" %}</div>
+{% endblock %}

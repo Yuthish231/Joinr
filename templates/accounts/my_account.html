@@ -1,0 +1,36 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Account & sessions{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Account &amp; sessions</h1>
+  <div class="sub">Where you are signed in right now. End anything you do not recognise.</div></div>
+  <div class="actions"><a class="btn" href="{% url 'password_change' %}">Change password</a></div></div>
+
+<div class="grid g-main">
+  <div class="card"><h2>Active sessions ({{ sessions|length }} of {{ max_sessions }} allowed)</h2>
+    <div class="table-wrap"><table><thead><tr><th>Device</th><th>Address</th><th>Signed in</th><th>Last active</th><th></th></tr></thead><tbody>
+    {% for s in sessions %}<tr>
+      <td>{{ s.user_agent|short_ua }}{% if s.session_key == current_key %} <span class="badge ok">this device</span>{% endif %}</td>
+      <td>{{ s.ip|default:"-" }}</td><td>{{ s.created_at|date:"d M, H:i" }}</td><td>{{ s.last_seen|timesince }} ago</td>
+      <td class="right"><form class="inline" method="post" action="{% url 'session_revoke' s.pk %}">{% csrf_token %}
+        <button class="btn sm {% if s.session_key != current_key %}danger{% endif %}" type="submit">{% if s.session_key == current_key %}Sign out{% else %}End{% endif %}</button></form></td>
+    </tr>{% endfor %}</tbody></table></div>
+    {% if sessions|length > 1 %}<form method="post" action="{% url 'sessions_revoke_others' %}" style="margin-top:.8rem">{% csrf_token %}
+      <button class="btn danger" type="submit">Sign out everywhere else</button></form>{% endif %}
+  </div>
+  <div class="card"><h2>Session rules</h2>
+    <dl class="kv"><dt>Idle timeout</dt><dd>{{ idle_minutes }} minutes</dd>
+      <dt>Maximum length</dt><dd>{{ absolute_hours }} hours</dd>
+      <dt>Devices at once</dt><dd>{{ max_sessions }}</dd>
+      <dt>Sign out</dt><dd>Ends the session on the server</dd></dl>
+    <p class="small muted">Changing your password, or an administrator suspending or removing you, ends your other sessions immediately.</p></div>
+</div>
+
+<div class="card"><h2>Your profile</h2>
+  <dl class="kv"><dt>Name</dt><dd>{{ request.user.display_name }}</dd><dt>Email</dt><dd>{{ request.user.email }}</dd>
+    <dt>Employee ID</dt><dd>{{ request.user.employee_id|default:"-" }}</dd>
+    <dt>Department</dt><dd>{{ request.user.department|default:"-" }}</dd><dt>Job role</dt><dd>{{ request.user.job_role|default:"-" }}</dd>
+    <dt>Manager</dt><dd>{{ request.user.manager|default:"-" }}</dd>
+    <dt>Sign-in source</dt><dd>{% if request.user.source == "ldap" %}Company directory (LDAP){% else %}Local account{% endif %}</dd></dl>
+  <a class="small" href="{% url 'user_detail' request.user.pk %}">See your full access record →</a>
+</div>
+{% endblock %}

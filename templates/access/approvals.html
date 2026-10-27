@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Approvals{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Approvals</h1><div class="sub">Requests waiting for your decision.</div></div></div>
+<div class="card"><table><thead><tr><th>Person</th><th>Access</th><th>Risk</th><th>You are</th><th>Asked</th><th></th></tr></thead><tbody>
+{% for s in steps %}<tr><td>{{ s.request.requester.display_name }}</td><td>{{ s.request.entitlement.name }}</td>
+  <td><span class="badge {{ s.request.entitlement.risk|badge }}">{{ s.request.entitlement.get_risk_display }}</span></td>
+  <td class="small">{{ s.get_kind_display }}</td><td class="small">{{ s.request.created_at|timesince }} ago</td>
+  <td class="right"><a class="btn sm primary" href="{% url 'request_detail' s.request_id %}">Review</a></td></tr>
+{% empty %}<tr><td colspan="6" class="empty">Nothing is waiting for you.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

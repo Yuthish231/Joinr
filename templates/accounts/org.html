@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Departments & roles{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Departments &amp; job roles</h1>
+  <div class="sub">These drive automatic access: set which catalog items each department or role receives.</div></div></div>
+<div class="grid g2">
+  <div class="card"><h2>Departments</h2>
+    <table><thead><tr><th>Name</th><th>Code</th><th>People</th><th></th></tr></thead><tbody>
+    {% for d in departments %}<tr><td>{{ d.name }}</td><td><code>{{ d.code }}</code></td><td>{{ d.members.count }}</td>
+      <td class="right"><a class="btn sm" href="{% url 'org_edit' 'department' d.pk %}">Edit</a></td></tr>{% endfor %}</tbody></table>
+    <details class="box" style="margin-top:.8rem"><summary>Add department</summary>
+      <form method="post" action="{% url 'org_add' 'department' %}" style="margin-top:.7rem">{% csrf_token %}
+        {% with form=dept_form %}{% include "_fields.html" %}{% endwith %}<button class="btn primary" type="submit">Add</button></form></details></div>
+  <div class="card"><h2>Job roles</h2>
+    <table><thead><tr><th>Title</th><th>Department</th><th>People</th><th></th></tr></thead><tbody>
+    {% for r in roles %}<tr><td>{{ r.title }}</td><td>{{ r.department|default:"any" }}</td><td>{{ r.members.count }}</td>
+      <td class="right"><a class="btn sm" href="{% url 'org_edit' 'role' r.pk %}">Edit</a></td></tr>{% endfor %}</tbody></table>
+    <details class="box" style="margin-top:.8rem"><summary>Add job role</summary>
+      <form method="post" action="{% url 'org_add' 'role' %}" style="margin-top:.7rem">{% csrf_token %}
+        {% with form=role_form %}{% include "_fields.html" %}{% endwith %}<button class="btn primary" type="submit">Add</button></form></details></div>
+</div>
+{% endblock %}

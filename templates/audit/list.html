@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Audit log</h1><div class="sub">Append-only and hash-chained: any edit or deletion breaks verification.</div></div>
+  <div class="actions"><a class="btn" href="{% url 'audit_export' %}?{{ qs }}">Export CSV</a>
+    <form class="inline" method="post" action="{% url 'audit_verify' %}">{% csrf_token %}<button class="btn primary" type="submit">Verify integrity</button></form></div></div>
+<form class="filters" method="get"><input type="text" name="q" value="{{ q }}" placeholder="Search person">
+  <select name="action" onchange="this.form.submit()"><option value="">All events</option>{% for g in groups %}<option value="{{ g }}" {% if g == action %}selected{% endif %}>{{ g }}</option>{% endfor %}</select>
+  <button class="btn" type="submit">Filter</button></form>
+<div class="card"><div class="table-wrap"><table><thead><tr><th>Time</th><th>Event</th><th>Actor</th><th>Target</th><th>Address</th><th>Detail</th></tr></thead><tbody>
+{% for e in page %}<tr><td class="nowrap small">{{ e.ts|date:"d M Y H:i:s" }}</td>
+  <td>{{ e.action }}{% if not e.success %} <span class="badge bad">failed</span>{% endif %}</td>
+  <td>{{ e.actor_label }}</td><td>{{ e.target_label|default:"-" }}</td><td class="small">{{ e.ip|default:"-" }}</td>
+  <td class="small muted">{% for k, v in e.details.items %}{% if v != None and v != "" and v != "[]" %}{{ k }}={{ v }}{% if not forloop.last %} · {% endif %}{% endif %}{% endfor %}</td></tr>
+{% empty %}<tr><td colspan="6" class="empty">No events.</td></tr>{% endfor %}</tbody></table></div>{% include "_pager.html" %}</div>
+{% endblock %}

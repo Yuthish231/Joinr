@@ -1,0 +1,92 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}{{ t.display_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="person"><span class="avatar lg">{{ t|initials }}</span>
+    <div><h1>{{ t.display_name }} <span class="badge {{ t.status|badge }}">{{ t.get_status_display }}</span>
+      {% if t.is_locked %}<span class="badge bad">locked</span>{% endif %}</h1>
+      <div class="sub">{{ t.job_role|default:"No job role" }}{% if t.department %} · {{ t.department }}{% endif %} · {{ t.email }}</div></div></div>
+  {% if admin and t.status != "terminated" and not is_self %}
+  <div class="actions">
+    {% if t.status == "active" %}<form class="inline" method="post" action="{% url 'user_suspend' t.pk %}">{% csrf_token %}<button class="btn" type="submit">Suspend</button></form>{% endif %}
+    {% if t.status == "suspended" %}<form class="inline" method="post" action="{% url 'user_reactivate' t.pk %}">{% csrf_token %}<button class="btn" type="submit">Reactivate</button></form>{% endif %}
+    <form class="inline" method="post" action="{% url 'user_force_logout' t.pk %}">{% csrf_token %}<button class="btn" type="submit">Sign out everywhere</button></form>
+    <form class="inline" method="post" action="{% url 'user_reset_password' t.pk %}" onsubmit="return confirm('Create a new temporary password and sign them out?')">{% csrf_token %}<button class="btn" type="submit">Reset password</button></form>
+    <form class="inline" method="post" action="{% url 'user_terminate' t.pk %}" onsubmit="return confirm('Remove ALL access for {{ t.display_name|escapejs }} now? This cannot be undone.')">{% csrf_token %}
+      <input type="hidden" name="reason" value="manual offboarding"><button class="btn danger" type="submit">Deprovision now</button></form>
+  </div>{% endif %}
+</div>
+
+{% if credentials %}<div class="secret"><strong>Temporary credentials — shown once.</strong> Pass them on securely; they must change the password at first sign-in.<br>
+  Username <code>{{ credentials.username }}</code> &nbsp; Password <code>{{ credentials.password }}</code></div>{% endif %}
+
+<div class="grid g-main">
+<div>
+  <div class="card"><h2>Access held now ({{ grants|length }})</h2>
+    <div class="table-wrap"><table><thead><tr><th>Access</th><th>Why they have it</th><th>Expires</th>{% if admin %}<th></th>{% endif %}</tr></thead><tbody>
+    {% for g in grants %}<tr>
+      <td>{{ g.entitlement.name }} <span class="badge {{ g.entitlement.risk|badge }}">{{ g.entitlement.get_risk_display }}</span>
+        {% if g.needs_review %}<span class="badge warn">re-confirm</span>{% endif %}</td>
+      <td class="small">{{ g.get_source_display }}<div class="muted">since {{ g.granted_at|date:"d M Y" }}</div></td>
+      <td class="small">{{ g.expires_at|date:"d M Y"|default:"never" }}</td>
+      {% if admin %}<td class="right nowrap">
+        {% if g.needs_review %}<form class="inline" method="post" action="{% url 'grant_confirm' g.pk %}">{% csrf_token %}<button class="btn sm" type="submit">Still needed</button></form>{% endif %}
+        <form class="inline" method="post" action="{% url 'grant_revoke' g.pk %}">{% csrf_token %}<button class="btn sm danger" type="submit">Remove</button></form></td>{% endif %}
+    </tr>{% empty %}<tr><td colspan="4" class="empty">No access.</td></tr>{% endfor %}</tbody></table></div>
+    {% if past_grants %}<details class="box" style="margin-top:.8rem"><summary>Past access ({{ past_grants|length }})</summary>
+      <table style="margin-top:.5rem"><tbody>{% for g in past_grants %}<tr><td>{{ g.entitlement.name }}</td>
+        <td class="small muted">{{ g.revoke_reason|default:"ended"|cut:"_" }} · {{ g.revoked_at|date:"d M Y" }}</td></tr>{% endfor %}</tbody></table></details>{% endif %}
+  </div>
+
+  {% if admin and t.status != "terminated" %}
+  <div class="card"><h2>Lifecycle actions</h2>
+    <details class="box"><summary>Move: change department, role or manager (mover)</summary>
+      <form method="post" action="{% url 'user_move' t.pk %}" style="margin-top:.7rem">{% csrf_token %}
+        {% with form=mover_form %}{% include "_fields.html" %}{% endwith %}
+        <p class="small muted">Access that came from the old department or role is removed and the new role's access is granted. Access they requested or were given by hand is kept but flagged for re-confirmation.</p>
+        <button class="btn primary" type="submit">Apply move</button></form></details>
+    <details class="box"><summary>Leaver: set last working day</summary>
+      <form method="post" action="{% url 'user_depart' t.pk %}" style="margin-top:.7rem">{% csrf_token %}
+        {% with form=departure_form %}{% include "_fields.html" %}{% endwith %}
+        <p class="small muted">All access, sessions and the directory entry are removed automatically at the end of that day.</p>
+        <button class="btn primary" type="submit">Save</button></form></details>
+  </div>{% endif %}
+
+  <div class="card"><h2>Lifecycle history</h2>
+    <ul class="timeline">{% for e in events %}<li><span class="badge {{ e.kind|badge }}">{{ e.get_kind_display }}</span> {{ e.summary }}
+      <div class="small muted">{{ e.ts|date:"d M Y, H:i" }} · {{ e.actor.username|default:"system" }}</div></li>{% empty %}<li class="muted">No history.</li>{% endfor %}</ul></div>
+
+  {% if audit %}<div class="card"><h2>Audit trail</h2><table><tbody>
+    {% for e in audit %}<tr><td class="small nowrap">{{ e.ts|date:"d M H:i" }}</td><td>{{ e.action }}</td><td class="small muted">{{ e.actor_label }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+</div>
+
+<div>
+  <div class="card"><h2>Details</h2>
+    <dl class="kv"><dt>Employee ID</dt><dd>{{ t.employee_id|default:"-" }}</dd><dt>Username</dt><dd>{{ t.username }}</dd>
+      <dt>Manager</dt><dd>{% if t.manager %}<a href="{% url 'user_detail' t.manager.pk %}">{{ t.manager.display_name }}</a>{% else %}-{% endif %}</dd>
+      <dt>Starts</dt><dd>{{ t.start_date|date:"d M Y"|default:"-" }}</dd>
+      <dt>Last working day</dt><dd>{{ t.last_working_day|date:"d M Y"|default:"-" }}</dd>
+      {% if t.terminated_at %}<dt>Left</dt><dd>{{ t.terminated_at|date:"d M Y, H:i" }}</dd>{% endif %}
+      <dt>Sign-in</dt><dd>{% if t.source == "ldap" %}Directory (LDAP){% else %}Local password{% endif %}</dd>
+      {% if t.ldap_dn %}<dt>Directory DN</dt><dd class="small" style="word-break:break-all">{{ t.ldap_dn }}</dd>{% endif %}
+      <dt>Last sign-in</dt><dd>{{ t.last_login|date:"d M Y, H:i"|default:"never" }}</dd></dl></div>
+
+  <div class="card"><h2>Sessions ({{ sessions|length }})</h2>
+    {% for s in sessions %}<div class="small" style="padding:.3rem 0;border-bottom:1px solid var(--line)">{{ s.user_agent|short_ua }} · {{ s.ip|default:"-" }}<div class="muted">active {{ s.last_seen|timesince }} ago</div></div>
+    {% empty %}<div class="muted small">Not signed in anywhere.</div>{% endfor %}</div>
+
+  <div class="card"><h2>Checklist</h2>
+    {% for task in tasks %}<div style="padding:.25rem 0">
+      {% if admin or t.manager_id == request.user.pk %}{% if not task.automatic %}
+      <form class="inline" method="post" action="{% url 'task_toggle' task.pk %}">{% csrf_token %}<button class="btn sm" type="submit">{% if task.done %}☑{% else %}☐{% endif %}</button></form>
+      {% else %}<span class="btn sm" style="cursor:default">{% if task.done %}☑{% else %}☐{% endif %}</span>{% endif %}
+      {% else %}{% if task.done %}☑{% else %}☐{% endif %}{% endif %}
+      <span class="small {% if task.done %}muted{% endif %}">{{ task.title }}{% if task.automatic %} <em>(automatic)</em>{% endif %}</span></div>
+    {% empty %}<div class="muted small">No tasks.</div>{% endfor %}</div>
+
+  <div class="card"><h2>Access requests</h2>
+    {% for r in requests %}<div class="small" style="padding:.3rem 0"><a href="{% url 'request_detail' r.pk %}">{{ r.entitlement.name }}</a>
+      <span class="badge {{ r.status|badge }}">{{ r.status }}</span></div>{% empty %}<div class="muted small">None.</div>{% endfor %}</div>
+</div>
+</div>
+{% endblock %}

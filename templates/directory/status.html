@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Directory (LDAP){% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Directory (LDAP)</h1><div class="sub">Sign-in and provisioning against the company directory.</div></div>
+  {% if enabled %}<form method="post" action="{% url 'directory_sync' %}">{% csrf_token %}<button class="btn primary" type="submit">Sync now</button></form>{% endif %}</div>
+<div class="grid g2">
+  <div class="card"><h2>Connection</h2>
+    {% if enabled %}<p>{% if ok %}<span class="badge ok">Connected</span>{% else %}<span class="badge bad">Unreachable</span>{% endif %} <span class="small muted">{{ message }}</span></p>
+    {% else %}<p><span class="badge muted">Disabled</span> Set <code>LDAP_ENABLED=true</code> to turn it on.</p>{% endif %}
+    <dl class="kv"><dt>Server</dt><dd>{{ uri }}</dd><dt>Base DN</dt><dd>{{ base_dn }}</dd><dt>People</dt><dd>{{ user_ou }}</dd>
+      <dt>Write-back</dt><dd>{% if write_back %}On: joiners, movers and leavers update the directory{% else %}Off (read-only){% endif %}</dd></dl></div>
+  <div class="card"><h2>What it does</h2><ul style="margin:0;padding-left:1.1rem" class="small">
+    <li>People sign in with their directory password; Joinr never stores it.</li>
+    <li>Directory people are mirrored as identities, with department and job role mapped from <code>departmentNumber</code> and <code>title</code>.</li>
+    <li>A person disabled in the directory is deprovisioned here; a changed department or title is treated as a move.</li>
+    <li>New joiners get a directory entry; leavers are scrambled, removed from groups and moved to the Disabled OU; approved access adds them to the matching LDAP group.</li></ul></div>
+</div>
+{% if result %}<div class="card"><h2>Last sync</h2>
+  <dl class="kv"><dt>Entries read</dt><dd>{{ result.total }}</dd><dt>Created</dt><dd>{{ result.created }}</dd><dt>Moved</dt><dd>{{ result.moved }}</dd>
+    <dt>Disabled</dt><dd>{{ result.disabled }}</dd><dt>Unchanged</dt><dd>{{ result.updated }}</dd></dl>
+  {% for e in result.errors %}<div class="small" style="color:var(--bad)">{{ e }}</div>{% endfor %}</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}My team{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>My team</h1><div class="sub">People who report to you. You approve their access requests.</div></div></div>
+<div class="card"><table><thead><tr><th>Person</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>
+{% for u in reports %}<tr><td><div class="person"><span class="avatar">{{ u|initials }}</span>{{ u.display_name }}</div></td>
+  <td>{{ u.job_role|default:"-" }}<div class="small muted">{{ u.department|default:"" }}</div></td>
+  <td><span class="badge {{ u.status|badge }}">{{ u.get_status_display }}</span></td>
+  <td class="right"><a class="btn sm" href="{% url 'user_detail' u.pk %}">Access record</a></td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

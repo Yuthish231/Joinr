@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Hello, {{ request.user.first_name|default:request.user.username }}</h1>
+  <div class="sub">Here is where your access and identity work stands today.</div></div></div>
+
+<div class="grid g4">
+  <a class="card stat link" href="{% url 'my_access' %}" style="color:inherit"><div class="n">{{ my_grants }}</div><div class="l">Access you hold</div></a>
+  <a class="card stat link" href="{% url 'my_access' %}" style="color:inherit"><div class="n">{{ my_pending }}</div><div class="l">Your pending requests</div></a>
+  <a class="card stat link" href="{% url 'approvals' %}" style="color:inherit"><div class="n">{{ to_approve }}</div><div class="l">Waiting for your approval</div></a>
+  <a class="card stat link" href="{% url 'my_account' %}" style="color:inherit"><div class="n">{{ my_sessions }}</div><div class="l">Your active sessions</div></a>
+</div>
+
+{% if counts %}
+<h2 style="margin-top:.4rem">Identity overview</h2>
+<div class="grid g4">
+  <a class="card stat link" href="{% url 'user_list' %}?status=active" style="color:inherit"><div class="n">{{ counts.active }}</div><div class="l">Active people</div></a>
+  <a class="card stat link" href="{% url 'user_list' %}?status=pending" style="color:inherit"><div class="n">{{ counts.pending }}</div><div class="l">Joining soon</div></a>
+  <a class="card stat link" href="{% url 'user_list' %}?status=suspended" style="color:inherit"><div class="n">{{ counts.suspended }}</div><div class="l">Suspended</div></a>
+  <a class="card stat link" href="{% url 'user_list' %}?status=terminated" style="color:inherit"><div class="n">{{ counts.terminated }}</div><div class="l">Left (deprovisioned)</div></a>
+</div>
+<div class="grid g4">
+  <div class="card stat"><div class="n">{{ open_requests }}</div><div class="l">Open access requests</div></div>
+  <div class="card stat"><div class="n">{{ active_sessions }}</div><div class="l">Active sessions</div></div>
+  <div class="card stat"><div class="n">{{ failed_24h }}</div><div class="l">Failed sign-ins, 24h</div></div>
+  <a class="card stat link" href="{% if admin %}{% url 'grants_review' %}{% else %}#{% endif %}" style="color:inherit"><div class="n">{{ needs_review }}</div><div class="l">Access to re-confirm</div></a>
+</div>
+
+<div class="grid g2">
+  <div class="card"><h2>Leaving in the next 14 days</h2>
+    {% for u in departing %}<div class="person" style="padding:.35rem 0"><span class="avatar">{{ u|initials }}</span>
+      <div><a href="{% url 'user_detail' u.pk %}">{{ u.display_name }}</a><div class="small muted">last day {{ u.last_working_day|date:"d M Y" }}</div></div></div>
+    {% empty %}<div class="empty">No scheduled departures.</div>{% endfor %}</div>
+  <div class="card"><h2>Starting soon</h2>
+    {% for u in starting %}<div class="person" style="padding:.35rem 0"><span class="avatar">{{ u|initials }}</span>
+      <div><a href="{% url 'user_detail' u.pk %}">{{ u.display_name }}</a><div class="small muted">starts {{ u.start_date|date:"d M Y" }}</div></div></div>
+    {% empty %}<div class="empty">Nobody pending.</div>{% endfor %}</div>
+</div>
+
+<div class="grid g2">
+  <div class="card"><h2>Recent lifecycle changes</h2>
+    <ul class="timeline">{% for e in recent_events %}<li><span class="badge {{ e.kind|badge }}">{{ e.get_kind_display }}</span>
+      <a href="{% url 'user_detail' e.user_id %}">{{ e.user.display_name }}</a>
+      <div class="small muted">{{ e.summary }} · {{ e.ts|timesince }} ago</div></li>{% empty %}<li class="muted">Nothing yet.</li>{% endfor %}</ul></div>
+  <div class="card"><h2>Recent audit events</h2>
+    <ul class="timeline">{% for e in recent_audit %}<li><strong>{{ e.action }}</strong>
+      <div class="small muted">{{ e.actor_label }}{% if e.target_label and e.target_label != e.actor_label %} → {{ e.target_label }}{% endif %} · {{ e.ts|timesince }} ago</div></li>{% endfor %}</ul>
+    <a class="small" href="{% url 'audit_list' %}">Open the audit log →</a></div>
+</div>
+{% endif %}
+{% endblock %}

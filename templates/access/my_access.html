@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}My access{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>My access &amp; requests</h1><div class="sub">What you can use, and what you have asked for.</div></div></div>
+<div class="grid g-main">
+<div>
+  <div class="card"><h2>Access you hold ({{ grants|length }})</h2><table><thead><tr><th>Access</th><th>Source</th><th>Expires</th></tr></thead><tbody>
+  {% for g in grants %}<tr><td>{{ g.entitlement.name }}</td><td class="small">{{ g.get_source_display }}</td><td class="small">{{ g.expires_at|date:"d M Y"|default:"never" }}</td></tr>
+  {% empty %}<tr><td colspan="3" class="empty">No access yet.</td></tr>{% endfor %}</tbody></table></div>
+  <div class="card"><h2>Your requests</h2><table><thead><tr><th>Access</th><th>Status</th><th>Asked</th><th></th></tr></thead><tbody>
+  {% for r in requests %}<tr><td><a href="{% url 'request_detail' r.pk %}">{{ r.entitlement.name }}</a></td>
+    <td><span class="badge {{ r.status|badge }}">{{ r.get_status_display }}</span></td><td class="small">{{ r.created_at|date:"d M Y" }}</td>
+    <td class="right">{% if r.status == "pending" %}<form class="inline" method="post" action="{% url 'request_cancel' r.pk %}">{% csrf_token %}<button class="btn sm" type="submit">Cancel</button></form>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="4" class="empty">You have not requested anything.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+<div class="card"><h2>Request access</h2>
+  <form method="post" action="{% url 'request_create' %}">{% csrf_token %}{% include "_fields.html" %}
+    <button class="btn primary" type="submit">Send request</button></form></div>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}New joiner{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>New joiner</h1>
+  <div class="sub">Creates the identity, assigns access for their department and role{% if LDAP_ENABLED %}, and provisions their directory entry{% endif %}.</div></div></div>
+<div class="card form-narrow"><form method="post">{% csrf_token %}{% include "_fields.html" %}
+  <button class="btn primary" type="submit">Create account</button> <a class="btn" href="{% url 'user_list' %}">Cancel</a></form></div>
+{% endblock %}

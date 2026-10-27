@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Active sessions{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Active sessions</h1><div class="sub">Every signed-in browser, across all people.</div></div></div>
+<div class="card"><div class="table-wrap"><table><thead><tr><th>Person</th><th>Device</th><th>Address</th><th>Signed in</th><th>Last active</th><th></th></tr></thead><tbody>
+{% for s in sessions %}<tr>
+  <td><a href="{% url 'user_detail' s.user_id %}">{{ s.user.display_name }}</a></td>
+  <td>{{ s.user_agent|short_ua }}{% if s.session_key == current_key %} <span class="badge ok">you</span>{% endif %}</td>
+  <td>{{ s.ip|default:"-" }}</td><td>{{ s.created_at|date:"d M, H:i" }}</td><td>{{ s.last_seen|timesince }} ago</td>
+  <td class="right"><form class="inline" method="post" action="{% url 'session_revoke' s.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'sessions_all' %}">
+    <button class="btn sm danger" type="submit">End</button></form></td></tr>
+{% empty %}<tr><td colspan="6" class="empty">No active sessions.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

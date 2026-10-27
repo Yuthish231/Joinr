@@ -1,0 +1,20 @@
+{% load static %}<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Joinr</title><link rel="stylesheet" href="{% static 'css/app.css' %}"></head>
+<body class="auth">
+<div class="panel">
+  <div class="brand"><span class="logo" style="color:#fff">J</span> Joinr</div>
+  <h1 style="font-size:1.25rem">Sign in</h1>
+  <p class="muted small" style="margin-top:0">Identity &amp; access management{% if LDAP_ENABLED %} · directory sign-in enabled{% endif %}</p>
+  {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
+  <form method="post">{% csrf_token %}
+    {% if form.non_field_errors %}<ul class="errorlist" style="margin-bottom:.8rem"><li>Incorrect username or password.</li></ul>{% endif %}
+    <div class="field"><label for="id_username">Username</label>
+      <input type="text" name="username" id="id_username" autofocus autocomplete="username" required></div>
+    <div class="field"><label for="id_password">Password</label>
+      <input type="password" name="password" id="id_password" autocomplete="current-password" required></div>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn primary" style="width:100%;justify-content:center" type="submit">Sign in</button>
+  </form>
+</div>
+</body></html>

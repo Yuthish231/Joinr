@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{% if obj %}Edit{% else %}New{% endif %} entitlement{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{% if obj %}Edit {{ obj.name }}{% else %}New entitlement{% endif %}</h1>
+  <div class="sub">A named piece of access. Departments and roles ticked here receive it automatically.</div></div></div>
+<div class="card form-narrow"><form method="post">{% csrf_token %}{% include "_fields.html" %}
+  <button class="btn primary" type="submit">Save</button> <a class="btn" href="{% url 'catalog' %}">Cancel</a></form></div>
+{% endblock %}

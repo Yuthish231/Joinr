@@ -1,0 +1,8 @@
+.venv
+.git
+__pycache__
+*.pyc
+db.sqlite3
+staticfiles
+.env
+.dev-credentials.txt
